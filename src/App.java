@@ -1,5 +1,6 @@
 import org.jline.reader.*;
 import org.jline.reader.impl.completer.StringsCompleter;
+import java.sql.*;
 
 public class App
 {
@@ -8,6 +9,8 @@ public class App
     private LineReader reader = LineReaderBuilder.builder().completer(s).build();
     private boolean quit = false;
     private boolean connected = false;
+    private Connection connection;
+
     public void main() {
         connectDatabase();
         System.out.println("Welcome to GrenobleEat");
@@ -38,6 +41,20 @@ public class App
             }
     }
 
+    void connectDatabase() {
+        try {
+            // Load the JDBC driver
+            Class.forName("org.mariadb.jdbc.Driver");
+            System.out.println("Driver loaded");
+            // Try to connect
+            connection = DriverManager.getConnection
+            ("jdbc:mariadb://localhost/grenoble_eat", "dxkkxn", "dxkkxn");
+            System.out.println("Connected succesfully to database");
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
     void switchNotConnected(String cmd) {
         switch(cmd){
             case "connect":
@@ -57,7 +74,12 @@ public class App
         }
     }
     void disconnectDatabase() {
-        // TODO: fermer la connexion avec la base des donnees;
+        try {
+            connection.close();
+            System.out.println("Disconnected succesfully from database");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return;
     }
     void switchConnected(String cmd) {
