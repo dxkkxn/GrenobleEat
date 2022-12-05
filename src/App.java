@@ -1,6 +1,14 @@
-import org.jline.reader.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.List;
+
+import org.jline.reader.EndOfFileException;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.reader.ParsedLine;
+import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.completer.StringsCompleter;
-import java.sql.*;
 
 public class App
 {
@@ -8,8 +16,11 @@ public class App
     private DelegateCompleter s = new DelegateCompleter();
     private LineReader reader = LineReaderBuilder.builder().completer(s).build();
     private boolean quit = false;
+    private boolean quitBrowseMode = true;
     private boolean connected = false;
+    private boolean browsingCategories = false;
     private Connection connection;
+    private Client c;
 
     public void main() {
         connectDatabase();
@@ -17,7 +28,7 @@ public class App
         printHelpNotConnected();
         prompt = "GrenobleEat (Not connected)> ";
 
-        s.setCompleter(new StringsCompleter("browseCategories", "connect",
+        s.setCompleter(new StringsCompleter("connect",
                                             "quit"));
         ParsedLine pl = null;
         String line = null;
@@ -33,10 +44,11 @@ public class App
             if (pl.words().size() != 1) {
                 printHelpNotConnected();
             } else {
-                if (connected)
+                if (connected) {
                     switchConnected(pl.words().get(0));
-                else
+                } else {
                     switchNotConnected(pl.words().get(0));
+                }
                 }
             }
     }
@@ -55,14 +67,13 @@ public class App
         }
     }
 
+    void switchBrowsingCategories() {
+
+    }
     void switchNotConnected(String cmd) {
         switch(cmd){
             case "connect":
                 userConnect();
-                break;
-            case "browseCategories":
-                //TODO
-                //je suppose que cette fonctionnalité est dispo quand on n'est pas connecté ?
                 break;
             case "quit":
                 disconnectDatabase();
@@ -89,8 +100,8 @@ public class App
                 disconnectDatabase();
                 break;
             case "browseCategories":
-                //TODO
-                //je suppose que cette fonctionnalité est dispo quand on n'est pas connecté ?
+                quitBrowseMode = false;
+                browseCategories();
                 break;
             case "quit":
                 disconnectDatabase();
@@ -101,9 +112,90 @@ public class App
                 break;
         }
     }
+    private void printInfoBrowseCat(String currentCat) {
+        System.out.println("Current category: " + currentCat);
+        System.out.println("Available subcategories : ");
+        for (String cat: c.getSubcategories(currentCat)) {
+            System.out.println("\t"+cat);
+        }
+        List<String> completion = c.getSubcategories(currentCat);
+        completion.add("printRestaurants");
+        completion.add("quitBrowseMode");
+        completion.add("quit");
+        s.setCompleter(new StringsCompleter(completion));
 
+
+    }
+    private String concatWords(List<String> ls) {
+        String res = "";
+        for (int i = 0; i < ls.size()-1; i++) {
+            res += ls.get(i);
+            res += " ";
+        }
+        res += ls.get(ls.size()-1);
+        return res;
+    }
+    private void browseCategories() {
+        String currentCat = c.getRoot();
+        printInfoBrowseCat(currentCat);
+        String cmd = " ";
+        while (!quitBrowseMode) {
+            try {
+                String line = reader.readLine(prompt);
+                ParsedLine pl = reader.getParser().parse(line, 0);
+                cmd = concatWords(pl.words());
+
+            } catch (UserInterruptException e) {
+                // Ignore
+            } catch (EndOfFileException e) {
+                return;
+            }
+            if (c.getSubcategories(currentCat).contains(cmd)) {
+                currentCat = cmd;
+                System.out.println();
+                printInfoBrowseCat(currentCat);
+            } else {
+                switch(cmd){
+                    case "printRestaurants":
+                        printRestaurants(c.getRestaurants(currentCat));
+                        break;
+                    case "quitBrowseMode":
+                        System.out.println("Quiting browsing categories mode");
+                        s.setCompleter(new StringsCompleter("browseCategories", "connect",
+                                                            "placeOrder", "disconnect",
+                                                            "quit"));
+                        quitBrowseMode = true;
+                        break;
+                    case "quit":
+                        disconnectDatabase();
+                        quitBrowseMode = true;
+                        quit = true;
+                        break;
+                    default:
+                        printHelpBrowseCat();
+                        break;
+                }
+            }
+        }
+
+    }
+
+    private void printRestaurants(List<String> l) {
+        for (String s : l) {
+            System.out.println(s);
+        }
+    }
+
+
+    private void printHelpBrowseCat(){
+        System.out.println("Commandes disponibles : \n"
+                           +"\t - $(SubCategory) : to change of category\n"
+                           +"\t - printRestaurants : to print restaurants of current category"
+                           +"\t - quitBrowseMode : to quit browsing categories mode"
+                           +"\t - quit");
+    }
     private void printHelpNotConnected(){
-        System.out.println("Commandes disponibles : \n\t - connect\n\t - browseCategories");
+        System.out.println("Commandes disponibles : \n\t - connect\n\t - quit");
     }
     private void printHelpConnected(){
         System.out.println("Commandes disponibles : \n\t - disconnect\n\t - browseCategories\n\t - passerCommande");
@@ -141,6 +233,8 @@ public class App
         s.setCompleter(new StringsCompleter("browseCategories", "connect",
                                             "placeOrder", "disconnect",
                                             "quit"));
+        // creer une instance de client avec les donnees recuperees.
+        c = new Client(connection);
     }
 
 }
