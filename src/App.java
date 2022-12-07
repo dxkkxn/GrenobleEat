@@ -66,6 +66,8 @@ public class App
             //("jdbc:mariadb://localhost/grenoble_eat", "dxkkxn", "dxkkxn");
             System.out.println("Connected succesfully to database");
             Client.setConnection(connection);
+            PreparedStatement autocommitoff = connection.prepareStatement("SET autocommit = 0");
+            autocommitoff.executeQuery();
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -101,7 +103,7 @@ public class App
         switch(cmd){
             case "disconnect":
                 userDisconnect();
-                disconnectDatabase();
+                //disconnectDatabase(); on ne déconnecte que l'user pas
                 break;
             case "browseCategories":
                 quitBrowseMode = false;
@@ -111,6 +113,7 @@ public class App
                 placeOrder();
                 break;
             case "quit":
+                userDisconnect();
                 disconnectDatabase();
                 quit = true;
                 break;
@@ -130,7 +133,7 @@ public class App
             e.printStackTrace();
             return;
         }
-        prompt = "GrenobleEat >\nChoisissez un restaurant > ";
+        prompt = "Choisissez un restaurant> ";
         boolean restaurantChoisi = false;
         String line;
         ParsedLine pl = null;
@@ -146,14 +149,15 @@ public class App
         LocalDateTime now = LocalDateTime.now();
         String date = getDate(now);
         String heure = getHeure(now);
-        prompt = "GrenobleEat >\nChoisissez un / des plats suivi d'une quantité, puis entrez 'ok' > ";
-        int prix = 0;
-        while (true) {
+        prompt = "Choisissez un / des plats suivi d'une quantité, puis entrez 'valider' ou 'annuler'\n> ";
+        float prix = 0;
+        Client.ajouteCommande(date, heure, mailRestaurant, 0);
+        boolean termine = false;
+        while (!termine) {
             line = reader.readLine(prompt);
             pl = reader.getParser().parse(line, 0);
             if(pl.words().size() == 2){
                 String nomPlat = pl.words().get(0);
-                if(nomPlat.equals("ok")) break;
                 int idPlat = Client.checkRestauAPlat(mailRestaurant, nomPlat);
                 if(idPlat != 0){
                     int quantite = Integer.parseInt(pl.words().get(1));
@@ -164,8 +168,51 @@ public class App
                     System.out.println("Plat non trouvé");
                 }
             }
+            else if(pl.words().size() == 1){
+                if(pl.words().get(0).equals("valider")){
+                    System.out.println("Merci !");
+                    termine = true;
+                }
+                else if(pl.words().get(0).equals("annuler")){
+                    try{
+                        PreparedStatement rollback = connection.prepareStatement("ROLLBACK TO avantCommande");
+                        rollback.executeQuery();
+                        prompt = "GrenobleEat>";
+                        return;
+                    }
+                    catch (SQLException e){
+                        e.printStackTrace();
+                        return;
+                    }
+                }
+            }
         }
-        Client.ajouteCommande(date, heure, mailRestaurant, prix);
+        if(prix > 0){
+            Client.setPrixCommande(date, heure, prix);
+            try{
+                PreparedStatement commit = null;
+                commit = connection.prepareStatement("COMMIT");
+                commit.executeQuery();
+            }
+            catch(SQLException e){
+                e.printStackTrace();
+                return;
+            }
+        }
+        else{
+            try{
+                PreparedStatement rollback = connection.prepareStatement("ROLLBACK avantCommande");
+                rollback.executeQuery();
+                return;
+            }
+            catch (SQLException e){
+                e.printStackTrace();
+                return;
+            }
+        }
+
+        
+
         prompt = "GrenobleEat >";
     }
 
@@ -289,7 +336,7 @@ public class App
         boolean connectionOk = false;
         ParsedLine pl = null;
         while (!connectionOk){
-            
+            pl = null;
             while(pl == null || pl.words().size() != 1 || pl.words().get(0).equals("")){
                 line = reader.readLine(promptUser);
                 pl = reader.getParser().parse(line, 0);
