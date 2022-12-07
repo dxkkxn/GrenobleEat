@@ -61,6 +61,9 @@ public class App
             // Try to connect
             connection = DriverManager.getConnection
             ("jdbc:mariadb://localhost/GrenobleEat", "etienne", "pwd");
+            //System.out.println("Connected succesfully to database");
+            
+            //("jdbc:mariadb://localhost/grenoble_eat", "dxkkxn", "dxkkxn");
             System.out.println("Connected succesfully to database");
             Client.setConnection(connection);
         } catch (Exception e) {
@@ -98,7 +101,7 @@ public class App
         switch(cmd){
             case "disconnect":
                 userDisconnect();
-                //disconnectDatabase();
+                disconnectDatabase();
                 break;
             case "browseCategories":
                 quitBrowseMode = false;
@@ -222,9 +225,14 @@ public class App
             } else if (pl.words().get(0).equals("print")) {
                 c.printRestaurant(pl.words().get(1));
             } else {
-                switch(cmd){
+                switch(pl.words().get(0)){
                     case "printRestaurants":
-                        c.printRestaurants(currentCat);
+                        if (pl.words().size() == 3)
+                            c.printRestaurantsFilter(currentCat,
+                                                     pl.words().get(1),
+                                                     pl.words().get(2));
+                        else
+                            c.printRestaurants(currentCat);
                         break;
                     case "quitBrowseMode":
                         System.out.println("Quiting browsing categories mode");
