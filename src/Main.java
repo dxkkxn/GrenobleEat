@@ -65,9 +65,8 @@ public class Main
                 line = reader.readLine(promptPwd);
                 pl2 = reader.getParser().parse(line, 0);
             }
-            //co = essaiConnection();
-            connectionOk = true; 
-            System.out.println("mail : " + pl.words().get(0) + "\npassword : " + pl2.words().get(0));
+            connectionOk = Client.essaiConnection(pl.words().get(0), pl2.words().get(0));
+            //System.out.println("mail : " + pl.words().get(0) + "\npassword : " + pl2.words().get(0));
         }
         System.out.println("connectionOk");
 
@@ -81,9 +80,10 @@ public class Main
             if(pl.words().size() == 1){
                 switch(pl.words().get(0)){
                     case "disconnect":
+                        System.out.println("Goodbye !"), //+username ?
                         return ;
                     case "passer_commande":
-                        //TODO
+                        passCmd();
                         break;
                     default:
                         printHelpConnected();
@@ -91,6 +91,27 @@ public class Main
                 }
             }
         }
+    }
 
+    static private void passCmd(){
+        while(true){
+            //TODO : get username et l'afficher
+            line = reader.readLine("Choisissez un restau : ");
+            ParsedLine pl = reader.getParser().parse(line, 0);
+            //1 mot par line, pour des commandes simples
+            if(pl.words().size() == 1){
+                switch(pl.words().get(0)){
+                    case "help":
+                        System.out.println("Goodbye !"), //+username ?
+                        return ;
+                    case "passer_commande":
+                        passCmd();
+                        break;
+                    default:
+                        printHelpConnected();
+                        break;
+                }
+            }
+        }
     }
 }
