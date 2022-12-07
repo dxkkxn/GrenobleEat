@@ -34,7 +34,7 @@ CREATE TABLE Commande(
     CONSTRAINT statut_enum CHECK (statut IN ('attente de confirmation',
     'validée','disponible','en livraison', 'annulée par le client', 'annulée par le restaurant')),
 
-    FOREIGN KEY(idUtilisateur) REFERENCES Utilisateur(idUtilisateur),
+    FOREIGN KEY(idUtilisateur) REFERENCES Utilisateur(idUtilisateur) ON UPDATE CASCADE,
     FOREIGN KEY(mailRestaurant) REFERENCES Restaurant(mailRestaurant),
 
     PRIMARY KEY (mailRestaurant, idUtilisateur, dateCommande,heureCommande)
