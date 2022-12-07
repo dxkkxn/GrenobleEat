@@ -10,6 +10,8 @@ import org.jline.reader.ParsedLine;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.completer.StringsCompleter;
 
+
+
 public class App
 {
     private String prompt;
@@ -22,9 +24,15 @@ public class App
     private Connection connection;
     private Client c;
     private StringsCompleter connectedCompleter = new StringsCompleter("browseCategories", "connect",
-                                                      "passer_commande", "disconnect",
+                                                      "passerCommande", "disconnect",
                                                       "quit", "deleteAccount");
     private StringsCompleter notConnectedCompleter = new StringsCompleter("connect", "quit");
+
+    enum typeCommande{
+        LIVRAISON,
+        A_EMPORTER,
+        SUR_PLACE;
+    }
 
     public void main() {
         connectDatabase();
@@ -138,10 +146,11 @@ public class App
             e.printStackTrace();
             return;
         }
-        prompt = "Choisissez un restaurant> ";
-        boolean restaurantChoisi = false;
         String line;
         ParsedLine pl = null;
+        boolean restaurantChoisi = false;
+        
+        prompt = "Choisissez un restaurant> ";
         while(!restaurantChoisi){
             line = reader.readLine(prompt);
             pl = reader.getParser().parse(line, 0);
@@ -149,8 +158,33 @@ public class App
                 restaurantChoisi = Client.checkRestau(pl.words().get(0));
             }
         }
+
         String nomRestaurant = pl.words().get(0);
         String mailRestaurant = Client.getMailRestaurant(nomRestaurant);
+        
+        typeCommande typeCommand = typeCommande.A_EMPORTER;
+        boolean surPlace = false;
+        prompt = "sur place / a emporter / en livraison>";
+        pl = null;
+        while(pl == null || pl.words().size() != 2 || !((pl.words().get(0).equals("a") && pl.words().get(1).equals("emporter")) || (pl.words().get(0).equals("sur") && pl.words().get(1).equals("place")) || (pl.words().get(0).equals("en") && pl.words().get(1).equals("livraison")))){
+            line = reader.readLine(prompt);
+            pl = reader.getParser().parse(line, 0);
+        }
+        switch(pl.words().get(0)){
+            case "sur":
+                typeCommand = typeCommande.SUR_PLACE;
+                break;
+            case "a":
+                typeCommand = typeCommande.A_EMPORTER;
+                break;
+            case "en":
+                typeCommand = typeCommande.LIVRAISON;
+                break;
+            default:
+                break;
+        }
+        
+        
         LocalDateTime now = LocalDateTime.now();
         String date = getDate(now);
         String heure = getHeure(now);
@@ -168,6 +202,8 @@ public class App
                     int quantite = Integer.parseInt(pl.words().get(1));
                     prix += quantite * Client.getPrix(mailRestaurant, idPlat);
                     Client.ajoutePlat(date, heure, mailRestaurant, idPlat, quantite);
+                    System.out.println("Panier mis à jour !");
+                    //TODO : consulter panier
                 }
                 else{
                     System.out.println("Plat non trouvé");
@@ -179,46 +215,104 @@ public class App
                     termine = true;
                 }
                 else if(pl.words().get(0).equals("annuler")){
-                    try{
-                        PreparedStatement rollback = connection.prepareStatement("ROLLBACK TO avantCommande");
-                        rollback.executeQuery();
-                        prompt = "GrenobleEat>";
-                        return;
-                    }
-                    catch (SQLException e){
-                        e.printStackTrace();
-                        return;
-                    }
+                    rollback();
+                    prompt = "GrenobleEat>";
+                    return;
                 }
             }
         }
         if(prix > 0){
             Client.setPrixCommande(date, heure, prix);
-            try{
-                PreparedStatement commit = null;
-                commit = connection.prepareStatement("COMMIT");
-                commit.executeQuery();
-            }
-            catch(SQLException e){
-                e.printStackTrace();
-                return;
+            switch(typeCommand){
+                case SUR_PLACE:
+                    pl = null;
+                    prompt = "Nombre de personnes>";
+                    while(pl == null || pl.words().size()!= 1){
+                        line = reader.readLine(prompt);
+                        pl = reader.getParser().parse(line, 0);
+                    }
+                    int nbPersonnes = Integer.parseInt(pl.words().get(0));
+
+                    pl = null;
+                    prompt = "heure d'arrivee (hh-mm)>";
+                    while(pl == null || pl.words().size()!= 1){
+                        line = reader.readLine(prompt);
+                        pl = reader.getParser().parse(line, 0);
+                    }
+                    String heureArrivee = pl.words().get(0);
+                    heureArrivee += "-00";
+                    if(Client.checkHeure(mailRestaurant, heureArrivee)){
+                        int retVal =  Client.ajouteSurPlace(date, heure,
+                                                     mailRestaurant, nbPersonnes, heureArrivee);
+                        if(retVal == 0){
+                            commit();
+                            System.out.println("Commande passée !");
+                        }
+                        else{
+                            rollback();
+                            return;  
+                        } 
+                    }
+                    else{
+                        System.out.println("Désolé, il n'y a plus de place !");
+                        rollback();
+                    }
+                    break;
+                case LIVRAISON:
+                    pl = null;
+                    prompt = "Adresse de livraison>";
+                    while(pl == null || pl.words().size() == 0){
+                        line = reader.readLine(prompt);
+                        pl = reader.getParser().parse(line, 0);
+                    }
+                    String adresse = concatWords(pl.words());
+                    if(adresse != null){
+                        int ret = Client.ajouteLivraison(date, heure, mailRestaurant, adresse);
+                        if(ret == 0){
+                            commit();
+                            System.out.println("Commande passée !");
+                        }
+                        else rollback();
+                    }
+                    else rollback();
+                    break;
+                case A_EMPORTER:
+                    commit();
+                    System.out.println("Commande passée !");
+                    break;
+                default:
+                //n'arrive jamais
+                    break; 
             }
         }
         else{
-            try{
-                PreparedStatement rollback = connection.prepareStatement("ROLLBACK avantCommande");
-                rollback.executeQuery();
-                return;
-            }
-            catch (SQLException e){
-                e.printStackTrace();
-                return;
-            }
+            rollback();
         }
+        prompt = "GrenobleEat>";
+    }
 
-        
+    private void rollback(){
+        try{
+            PreparedStatement rollback = connection.prepareStatement("ROLLBACK TO avantCommande");
+            rollback.executeQuery();
+            return;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return;
+        }
+    }
 
-        prompt = "GrenobleEat >";
+    private void commit(){
+        try{
+            PreparedStatement commit = null;
+            commit = connection.prepareStatement("COMMIT");
+            commit.executeQuery();
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+            return;
+        }
     }
 
     private String getDate(LocalDateTime now){
@@ -358,5 +452,4 @@ public class App
         s.setCompleter(connectedCompleter);
         // creer une instance de client avec les donnees recuperees.
     }
-
 }

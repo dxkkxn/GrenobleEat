@@ -24,6 +24,8 @@ public class Client {
     private static PreparedStatement resInCatFilterStmt;
     private static PreparedStatement updatePrixStmt;
     private static PreparedStatement updateIdStmt;
+    private static PreparedStatement ajouteLivraisonStmt;
+    private static PreparedStatement ajouteSurPlaceStmt;
 
 
     private static int idUser;
@@ -38,6 +40,8 @@ public class Client {
                                                     "WHERE dateCommande LIKE ? and heureCommande LIKE ?");
             getMailRestaurantStmt = conn.prepareStatement("SELECT mailRestaurant FROM Restaurant WHERE nomRestaurant LIKE ?");
             ajouteCommandeStmt = conn.prepareStatement("INSERT INTO Commande Values(?, ?, ?, ?, ?, ?)");
+            ajouteLivraisonStmt = conn.prepareStatement("INSERT INTO CommandeLivraison Values(?, ?, ?, ?, ?)");
+            ajouteSurPlaceStmt = conn.prepareStatement("INSERT INTO CommandeSurPlace Values(?, ?, ?, ?, ?, ?)");
             ajoutePlatStmt = conn.prepareStatement("INSERT INTO aPourPlats VALUES( ?, ?, ?, ?, ?, ?)");
             checkRestauAPlatStmt = conn.prepareStatement("SELECT numeroPlat FROM Plat" + 
                                                             " WHERE mailRestaurant LIKE ?" +
@@ -147,6 +151,22 @@ public class Client {
         }
         catch (SQLException e){
             e.printStackTrace();
+        }
+    }
+
+    public static int ajouteLivraison(String date, String heure, String mailRestaurant, String address){
+        try {
+            ajouteLivraisonStmt.setString(1, date);
+            ajouteLivraisonStmt.setString(2, heure);
+            ajouteLivraisonStmt.setInt(3, idUser);
+            ajouteLivraisonStmt.setString(4, mailRestaurant);
+            ajouteLivraisonStmt.setString(5, address);
+            ajouteLivraisonStmt.executeQuery();
+            return 0;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return -1;
         }
     }
 
@@ -421,4 +441,16 @@ public class Client {
 
     }
 
+    //TODO
+    public static boolean checkHeure(String mailRestaurant, String heure){
+        return true;
+    }
+
+    public static int ajouteSurPlace(String date, String heure, String mailRestaurant, 
+                                        int nbPersonnes, String heureArrivee){
+        return 0;
+
+    }
 }
+
+
