@@ -158,9 +158,14 @@ public class App
             } else if (pl.words().get(0).equals("print")) {
                 c.printRestaurant(pl.words().get(1));
             } else {
-                switch(cmd){
+                switch(pl.words().get(0)){
                     case "printRestaurants":
-                        c.printRestaurants(currentCat);
+                        if (pl.words().size() == 3)
+                            c.printRestaurantsFilter(currentCat,
+                                                     pl.words().get(1),
+                                                     pl.words().get(2));
+                        else
+                            c.printRestaurants(currentCat);
                         break;
                     case "quitBrowseMode":
                         System.out.println("Quiting browsing categories mode");

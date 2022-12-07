@@ -12,9 +12,11 @@ public class Client {
     private Connection conn;
     private static PreparedStatement subcategoriesStmt;
     private static PreparedStatement resInCatStmt;
+    private static PreparedStatement resInCatFilterStmt;
     private static PreparedStatement categoriesOfResStmt;
     private static PreparedStatement infoResStmt;
     private static PreparedStatement scheduleDayStmt;
+    private static PreparedStatement opinionStmt;
 
     public void prepareAllStatements() {
         try {
@@ -33,6 +35,22 @@ public class Client {
                     +" r.mailRestaurant = apc.mailRestaurant and "
                     +"      (apc.nomCategorie = s.cat or"
                     +"      apc.nomCategorie LIKE ?)"
+                    +" group by mailRestaurant order by noteMoy desc, r.nomRestaurant asc");
+
+            resInCatFilterStmt = conn.prepareStatement(
+                    " with recursive succesor as"
+                    +" (select nomCategorieFille as cat from aPourCategorieMere"
+                    +" where nomCategorie LIKE ?"
+                    +" union all"
+                    +" select nomCategorieFille from succesor, aPourCategorieMere"
+                    +" where succesor.cat = aPourCategorieMere.nomCategorie)"
+                    +" select distinct r.mailRestaurant, r.nomRestaurant, r.textPresentation, avg(ape.note) as noteMoy"
+                    +" from Restaurant r, aPourCategorie apc, succesor s, aPourEvaluation ape, Horaires h"
+                    +" where r.mailRestaurant = ape.mailRestaurant and r.mailRestaurant = h.mailRestaurant"
+                    +" and r.mailRestaurant = apc.mailRestaurant and "
+                    +"      (apc.nomCategorie = s.cat or"
+                    +"      apc.nomCategorie LIKE ?)"
+                    +" and h.jour LIKE ? and h.heureOuverture > ?"
                     +" group by mailRestaurant order by noteMoy desc, r.nomRestaurant asc");
             categoriesOfResStmt = conn.prepareStatement(
             " with recursive ancestor as ("
@@ -53,6 +71,11 @@ public class Client {
             "select heureOuverture, heureFermeture"
             +" from Horaires where jour LIKE ? and mailRestaurant LIKE ?"
             +" order by heureOuverture asc");
+            opinionStmt = conn.prepareStatement(
+                "select avis, note from aPourEvaluation"
+                +" where mailRestaurant LIKE ?"
+            );
+
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -89,19 +112,18 @@ public class Client {
         }
         return root;
     }
-    private List<String> getCategories(String restaurant) {
-        List<String> cats = new ArrayList<>();
+    private void printCategories(String restaurant) {
         try {
             categoriesOfResStmt.setString(1, restaurant);
             categoriesOfResStmt.setString(2, restaurant);
             ResultSet res = categoriesOfResStmt.executeQuery();
-            while (res.next()) {
-                cats.add(res.getString(1));
+            while (!res.last() && res.next()) {
+                System.out.print(res.getString(1)+", ");
             }
+            System.out.println(res.getString(1));
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return cats;
     }
     private void printSchedule(String restaurant) {
         System.out.println("Schedule\n");
@@ -123,6 +145,23 @@ public class Client {
             e.printStackTrace ();
         }
     }
+    private void printOpinions(String restaurant) {
+        System.out.println("Opinions");
+        try {
+            opinionStmt.setString(1, restaurant);
+            ResultSet res = opinionStmt.executeQuery();
+            while (res.next()) {
+                for (int i = 0; i<res.getInt("note"); i++){
+                    System.out.print("✭ ");
+                }
+                System.out.println(res.getString("avis"));
+            }
+            System.out.println();
+        } catch (SQLException e) {
+            e.printStackTrace ();
+        }
+
+    }
     /*
      * Imprime tous les restaurants appartenant a la categorie category et
      * tous ses filles.
@@ -141,13 +180,27 @@ public class Client {
                 System.out.println("Average mark: " + res.getString("noteMoy"));
             }
             System.out.print("Categories: ");
-            List<String> categories = getCategories(restaurant);
-            int i;
-            for (i = 0; i < categories.size()-1; i++) {
-                System.out.print(categories.get(i)+", ");
-            }
-            System.out.println(categories.get(i));
+            printCategories(restaurant);
             printSchedule(restaurant);
+            printOpinions(restaurant);
+        } catch (SQLException e) {
+            e.printStackTrace ();
+        }
+    }
+
+    public void printRestaurantsFilter(String category, String day, String hour) {
+        try {
+            resInCatFilterStmt.setString(1, category);
+            resInCatFilterStmt.setString(2, category);
+            resInCatFilterStmt.setString(3, day);
+            resInCatFilterStmt.setString(4, hour);
+            ResultSet res = resInCatFilterStmt.executeQuery();
+            while (res.next()) {
+                System.out.println("Email: " + res.getString("mailRestaurant"));
+                System.out.println("Name: " + res.getString("nomRestaurant"));
+                System.out.println("Average mark: " + res.getString("noteMoy"));
+                System.out.println();
+            }
         } catch (SQLException e) {
             e.printStackTrace ();
         }
