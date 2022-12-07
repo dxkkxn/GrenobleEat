@@ -12,7 +12,7 @@ public class DBDemo {
     Client c = new Client(connection);
     c.browseCategories();
     System.out.println();
-    System.out.println(c.getRestaurants("cuisine savoyarde"));
+    // System.out.println(c.getRestaurants("cuisine savoyarde"));
 
     System.out.println("It works!");
 

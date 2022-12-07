@@ -139,10 +139,11 @@ public class App
         String currentCat = c.getRoot();
         printInfoBrowseCat(currentCat);
         String cmd = " ";
+        ParsedLine pl = null;
         while (!quitBrowseMode) {
             try {
                 String line = reader.readLine(prompt);
-                ParsedLine pl = reader.getParser().parse(line, 0);
+                pl = reader.getParser().parse(line, 0);
                 cmd = concatWords(pl.words());
 
             } catch (UserInterruptException e) {
@@ -154,10 +155,12 @@ public class App
                 currentCat = cmd;
                 System.out.println();
                 printInfoBrowseCat(currentCat);
+            } else if (pl.words().get(0).equals("print")) {
+                c.printRestaurant(pl.words().get(1));
             } else {
                 switch(cmd){
                     case "printRestaurants":
-                        printRestaurants(c.getRestaurants(currentCat));
+                        c.printRestaurants(currentCat);
                         break;
                     case "quitBrowseMode":
                         System.out.println("Quiting browsing categories mode");
