@@ -21,6 +21,10 @@ public class App
     private boolean browsingCategories = false;
     private Connection connection;
     private Client c;
+    private StringsCompleter connectedCompleter = new StringsCompleter("browseCategories", "connect",
+                                                      "passer_commande", "disconnect",
+                                                      "quit", "deleteAccount");
+    private StringsCompleter notConnectedCompleter = new StringsCompleter("connect", "quit");
 
     public void main() {
         connectDatabase();
@@ -28,8 +32,7 @@ public class App
         printHelpNotConnected();
         prompt = "GrenobleEat (Not connected)> ";
 
-        s.setCompleter(new StringsCompleter("connect",
-                                            "quit"));
+        s.setCompleter(notConnectedCompleter);
         ParsedLine pl = null;
         String line = null;
         while (!quit) {
@@ -60,10 +63,8 @@ public class App
             System.out.println("Driver loaded");
             // Try to connect
             connection = DriverManager.getConnection
-            ("jdbc:mariadb://localhost/GrenobleEat", "etienne", "pwd");
-            //System.out.println("Connected succesfully to database");
-            
-            //("jdbc:mariadb://localhost/grenoble_eat", "dxkkxn", "dxkkxn");
+            ("jdbc:mariadb://localhost/grenoble_eat", "dxkkxn", "dxkkxn");
+
             System.out.println("Connected succesfully to database");
             Client.setConnection(connection);
         } catch (Exception e) {
@@ -71,9 +72,6 @@ public class App
         }
     }
 
-    void switchBrowsingCategories() {
-
-    }
     void switchNotConnected(String cmd) {
         switch(cmd){
             case "connect":
@@ -114,6 +112,12 @@ public class App
                 disconnectDatabase();
                 quit = true;
                 break;
+            case "deleteAccount":
+                c.deleteAccount();
+                connected = false;
+                s.setCompleter(notConnectedCompleter);
+                prompt = "GrenobleEat (Not connected)> " ;
+
             default:
                 printHelpConnected();
                 break;
@@ -236,9 +240,7 @@ public class App
                         break;
                     case "quitBrowseMode":
                         System.out.println("Quiting browsing categories mode");
-                        s.setCompleter(new StringsCompleter("browseCategories", "connect",
-                                                            "passer_commande", "disconnect",
-                                                            "quit"));
+                        s.setCompleter(connectedCompleter);
                         quitBrowseMode = true;
                         break;
                     case "quit":
@@ -278,8 +280,7 @@ public class App
     private void userDisconnect() {
         connected = false;
         prompt = "GrenobleEat (Not connected)> " ;
-        s.setCompleter(new StringsCompleter("browseCategories", "connect",
-                                            "quit"));
+        s.setCompleter(notConnectedCompleter);
     }
     private void userConnect(){
         c = new Client(connection);
@@ -306,9 +307,7 @@ public class App
         connected = true; //redondant avec connectioOk ?
         // updatePrompt
         prompt = "GrenobleEat> " ;
-        s.setCompleter(new StringsCompleter("browseCategories",
-                                            "passerCommande", "disconnect",
-                                            "quit"));
+        s.setCompleter(connectedCompleter);
         // creer une instance de client avec les donnees recuperees.
     }
 

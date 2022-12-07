@@ -20,7 +20,9 @@ public class Client {
     private static PreparedStatement ajouteCommandeStmt;
     private static PreparedStatement getIdUserStmt;
     private static PreparedStatement opinionStmt;
+    private static PreparedStatement deleteCostumerStmt;
     private static PreparedStatement resInCatFilterStmt;
+    private static PreparedStatement updateIdStmt;
 
 
     private static int idUser;
@@ -97,6 +99,14 @@ public class Client {
                 "select avis, note from aPourEvaluation"
                 +" where mailRestaurant LIKE ?"
             );
+            deleteCostumerStmt = conn.prepareStatement(
+                "delete from Client"
+                +" where idUtilisateur like ?"
+                );
+            updateIdStmt = conn.prepareStatement(
+            "update Utilisateur"
+            +" set idUtilisateur = ?"
+            +" where idUtilisateur= ?");
 
 
         } catch (SQLException e) {
@@ -232,6 +242,28 @@ public class Client {
         System.out.println(getSubcategories(getSubcategories(root).get(0)));
     }
 
+    public void deleteAccount() {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet res = stmt.executeQuery("WITH RECURSIVE T AS ("
+            +"  SELECT 1 AS n, FLOOR(RAND() * 10) AS v"
+            +"  UNION ALL"
+            +"  SELECT n + 1, FLOOR(RAND() * 10)"
+            +"  FROM T"
+            +"  WHERE EXISTS(SELECT * FROM Utilisateur WHERE idUtilisateur = v)"
+            +")"
+            +" select v from T where n >= ALL(select n from t)");
+            res.next();
+            int newId = res.getInt(1);
+            deleteCostumerStmt.setInt(1, idUser);
+            deleteCostumerStmt.executeUpdate();
+            updateIdStmt.setInt(1, newId);
+            updateIdStmt.setInt(2, idUser);
+            updateIdStmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace ();
+        }
+    }
     public String getRoot() {
         String root = "";
         try {
