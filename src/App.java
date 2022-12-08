@@ -240,13 +240,13 @@ public class App
                     }
 
                     pl = null;
-                    prompt = "heure d'arrivee (hh-mm)>";
+                    prompt = "heure d'arrivee (hh:mm)>";
                     while(pl == null || pl.words().size()!= 1){
                         line = reader.readLine(prompt);
                         pl = reader.getParser().parse(line, 0);
                     }
                     String heureArrivee = pl.words().get(0);
-                    heureArrivee += "-00";
+                    heureArrivee += ":00";
 
                     Calendar calendar = Calendar.getInstance();
                     int day = calendar.get(Calendar.DAY_OF_WEEK);
@@ -254,6 +254,7 @@ public class App
                     if(Client.checkHeureEtCapacite(mailRestaurant, heureArrivee, day)){
                         int retVal =  Client.ajouteSurPlace(date, heure,
                                                      mailRestaurant, nbPersonnes, heureArrivee);
+                        prompt = "GrenobleEat>";
                         if(retVal == 0){
                             commit();
                             System.out.println("Commande passée !");
