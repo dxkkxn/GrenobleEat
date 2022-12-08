@@ -2,6 +2,7 @@ import java.sql.*;
 import java.util.List;
 import java.time.*;
 import java.time.format.*;
+import java.util.Calendar;
 
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
@@ -28,7 +29,7 @@ public class App
                                                       "quit", "deleteAccount");
     private StringsCompleter notConnectedCompleter = new StringsCompleter("connect", "quit");
 
-    enum typeCommande{
+    enum enumCommande{
         LIVRAISON,
         A_EMPORTER,
         SUR_PLACE;
@@ -162,7 +163,7 @@ public class App
         String nomRestaurant = pl.words().get(0);
         String mailRestaurant = Client.getMailRestaurant(nomRestaurant);
         
-        typeCommande typeCommand = typeCommande.A_EMPORTER;
+        enumCommande typeCommande = enumCommande.A_EMPORTER;
         boolean surPlace = false;
         prompt = "sur place / a emporter / en livraison>";
         pl = null;
@@ -172,13 +173,13 @@ public class App
         }
         switch(pl.words().get(0)){
             case "sur":
-                typeCommand = typeCommande.SUR_PLACE;
+                typeCommande = enumCommande.SUR_PLACE;
                 break;
             case "a":
-                typeCommand = typeCommande.A_EMPORTER;
+                typeCommande = enumCommande.A_EMPORTER;
                 break;
             case "en":
-                typeCommand = typeCommande.LIVRAISON;
+                typeCommande = enumCommande.LIVRAISON;
                 break;
             default:
                 break;
@@ -203,7 +204,6 @@ public class App
                     prix += quantite * Client.getPrix(mailRestaurant, idPlat);
                     Client.ajoutePlat(date, heure, mailRestaurant, idPlat, quantite);
                     System.out.println("Panier mis à jour !");
-                    //TODO : consulter panier
                 }
                 else{
                     System.out.println("Plat non trouvé");
@@ -223,7 +223,7 @@ public class App
         }
         if(prix > 0){
             Client.setPrixCommande(date, heure, prix);
-            switch(typeCommand){
+            switch(typeCommande){
                 case SUR_PLACE:
                     pl = null;
                     prompt = "Nombre de personnes>";
@@ -233,6 +233,12 @@ public class App
                     }
                     int nbPersonnes = Integer.parseInt(pl.words().get(0));
 
+                    if(nbPersonnes <= 0){
+                        System.out.println("Nombre de personnes non valide");
+                        rollback();
+                        return;
+                    }
+
                     pl = null;
                     prompt = "heure d'arrivee (hh-mm)>";
                     while(pl == null || pl.words().size()!= 1){
@@ -241,7 +247,11 @@ public class App
                     }
                     String heureArrivee = pl.words().get(0);
                     heureArrivee += "-00";
-                    if(Client.checkHeure(mailRestaurant, heureArrivee)){
+
+                    Calendar calendar = Calendar.getInstance();
+                    int day = calendar.get(Calendar.DAY_OF_WEEK);
+
+                    if(Client.checkHeureEtCapacite(mailRestaurant, heureArrivee, day)){
                         int retVal =  Client.ajouteSurPlace(date, heure,
                                                      mailRestaurant, nbPersonnes, heureArrivee);
                         if(retVal == 0){
@@ -286,6 +296,7 @@ public class App
             }
         }
         else{
+            System.out.println("Commande vide !");
             rollback();
         }
         prompt = "GrenobleEat>";

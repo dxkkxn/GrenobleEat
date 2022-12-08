@@ -26,6 +26,8 @@ public class Client {
     private static PreparedStatement updateIdStmt;
     private static PreparedStatement ajouteLivraisonStmt;
     private static PreparedStatement ajouteSurPlaceStmt;
+    private static PreparedStatement getHeureOuvStmt;
+    private static PreparedStatement getHeureFermStmt;
 
 
     private static int idUser;
@@ -36,6 +38,13 @@ public class Client {
 
     public void prepareAllStatements() {
         try {
+            ajouteSurPlaceStmt = conn.prepareStatement("INSERT INTO CommandeSurPlace VALUES (?, ?, ?, ?, ?, ?)");
+            getHeureOuvStmt = conn.prepareStatement("SELECT heureOuverture "+
+                                                        "FROM Horaires WHERE jour LIKE ? " +
+                                                        "AND mailRestaurant LIKE ? ");
+            getHeureFermStmt = conn.prepareStatement("SELECT heureFermeture "+
+                                                        "FROM Horaires WHERE jour LIKE ? " +
+                                                        "AND mailRestaurant LIKE ? ");
             updatePrixStmt = conn.prepareStatement("UPDATE Commande SET prixCommande = ? " + 
                                                     "WHERE dateCommande LIKE ? and heureCommande LIKE ?");
             getMailRestaurantStmt = conn.prepareStatement("SELECT mailRestaurant FROM Restaurant WHERE nomRestaurant LIKE ?");
@@ -442,14 +451,85 @@ public class Client {
     }
 
     //TODO
-    public static boolean checkHeure(String mailRestaurant, String heure){
-        return true;
+    public static boolean checkHeureEtCapacite(String mailRestaurant, String heure, int day){
+        String jour = null;
+        switch(day){
+            case 2:
+                jour = "Lundi";
+                break;
+            case 3:
+                jour = "Mardi";
+                break;
+            case 4:
+                jour = "Mercredi";
+                break;
+            case 5:
+                jour = "Jeudi";
+                break;
+            case 6:
+                jour = "Vendredi";
+            default:
+                return false;
+        }
+        System.out.println("Jour : " + jour);
+
+        ResultSet resOuv;
+        ResultSet resFerm;
+        try{
+            getHeureOuvStmt.setString(1, jour);
+            getHeureOuvStmt.setString(2, mailRestaurant);
+            resOuv = getHeureOuvStmt.executeQuery();
+            getHeureFermStmt.setString(1, jour);
+            getHeureFermStmt.setString(2, mailRestaurant);
+            resFerm = getHeureFermStmt.executeQuery();
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+        try{
+            resOuv.next();
+            resFerm.next();
+            String heureOuverture = resOuv.getString(1);
+            String heureFermeture = resFerm.getString(1);
+            System.out.println("heureOuverture : " + heureOuverture);
+            System.out.println("heureFermeture : " + heureFermeture);
+            if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
+                return true;
+            }
+            resOuv.next();
+            resFerm.next();
+            heureOuverture = resOuv.getString(1);
+            heureFermeture = resFerm.getString(1);
+            System.out.println("heureOuverture : " + heureOuverture);
+            System.out.println("heureFermeture : " + heureFermeture);
+            if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
+                return true;
+            }
+            return false;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static int ajouteSurPlace(String date, String heure, String mailRestaurant, 
                                         int nbPersonnes, String heureArrivee){
-        return 0;
-
+        try{
+            ajouteSurPlaceStmt.setString(1, date);
+            ajouteSurPlaceStmt.setString(2, heure);
+            ajouteSurPlaceStmt.setInt(3,idUser);
+            ajouteSurPlaceStmt.setString(4, mailRestaurant);
+            ajouteSurPlaceStmt.setInt(5, nbPersonnes);
+            ajouteSurPlaceStmt.setString(6, heureArrivee);
+            ajouteSurPlaceStmt.executeQuery();
+            return 1;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return -1;
+        }
     }
 }
 
