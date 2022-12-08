@@ -22,7 +22,10 @@ public class Client {
     private static PreparedStatement opinionStmt;
     private static PreparedStatement deleteCostumerStmt;
     private static PreparedStatement resInCatFilterStmt;
+    private static PreparedStatement updatePrixStmt;
     private static PreparedStatement updateIdStmt;
+    private static PreparedStatement ajouteLivraisonStmt;
+    private static PreparedStatement ajouteSurPlaceStmt;
 
 
     private static int idUser;
@@ -33,14 +36,18 @@ public class Client {
 
     public void prepareAllStatements() {
         try {
+            updatePrixStmt = conn.prepareStatement("UPDATE Commande SET prixCommande = ? " + 
+                                                    "WHERE dateCommande LIKE ? and heureCommande LIKE ?");
             getMailRestaurantStmt = conn.prepareStatement("SELECT mailRestaurant FROM Restaurant WHERE nomRestaurant LIKE ?");
-            ajouteCommandeStmt = conn.prepareStatement("INSERT INTO Commandes Values(?, ?, ?, ?, ?)");
-            ajoutePlatStmt = conn.prepareStatement("INSERT INTO aPourPlats VALUES( ?, ?, ?, ?, ?)");
+            ajouteCommandeStmt = conn.prepareStatement("INSERT INTO Commande Values(?, ?, ?, ?, ?, ?)");
+            ajouteLivraisonStmt = conn.prepareStatement("INSERT INTO CommandeLivraison Values(?, ?, ?, ?, ?)");
+            ajouteSurPlaceStmt = conn.prepareStatement("INSERT INTO CommandeSurPlace Values(?, ?, ?, ?, ?, ?)");
+            ajoutePlatStmt = conn.prepareStatement("INSERT INTO aPourPlats VALUES( ?, ?, ?, ?, ?, ?)");
             checkRestauAPlatStmt = conn.prepareStatement("SELECT numeroPlat FROM Plat" + 
                                                             " WHERE mailRestaurant LIKE ?" +
                                                             " AND nomPlat LIKE ?");
             getPrixStmt = conn.prepareStatement("SELECT prix FROM Plat" +
-                                                " WHERE mailRestaurant LIKE ? AND idPlat LIKE ?");
+                                                " WHERE mailRestaurant LIKE ? AND numeroPlat LIKE ?");
             getIdUserStmt = conn.prepareStatement("SELECT idUtilisateur FROM Client WHERE mailClient LIKE ?");
             getPwdStmt = conn.prepareStatement("SELECT motDePasse FROM Client WHERE mailClient LIKE ?");
             subcategoriesStmt = conn.prepareStatement("SELECT nomCategorieFille FROM aPourCategorieMere"
@@ -132,16 +139,45 @@ public class Client {
         }
     }
 
-    public static void ajouteCommande(String date, String heure, String mailRestaurant, int prix){
+    public static void ajouteCommande(String date, String heure, String mailRestaurant, float prix){
         try{
             ajouteCommandeStmt.setString(1, date);
             ajouteCommandeStmt.setString(2, heure);
             ajouteCommandeStmt.setInt(3, idUser);
             ajouteCommandeStmt.setString(4, mailRestaurant);
-            ajouteCommandeStmt.setInt(5, prix);
+            ajouteCommandeStmt.setFloat(5, prix);
+            ajouteCommandeStmt.setString(6, "attente de confirmation");
             ajouteCommandeStmt.executeQuery();
         }
         catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static int ajouteLivraison(String date, String heure, String mailRestaurant, String address){
+        try {
+            ajouteLivraisonStmt.setString(1, date);
+            ajouteLivraisonStmt.setString(2, heure);
+            ajouteLivraisonStmt.setInt(3, idUser);
+            ajouteLivraisonStmt.setString(4, mailRestaurant);
+            ajouteLivraisonStmt.setString(5, address);
+            ajouteLivraisonStmt.executeQuery();
+            return 0;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    public static void setPrixCommande(String date, String heure, float prix){
+        try {
+            updatePrixStmt.setFloat(1, prix);
+            updatePrixStmt.setString(2, date);
+            updatePrixStmt.setString(3, heure);
+            updatePrixStmt.executeQuery();
+        }
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -190,12 +226,12 @@ public class Client {
         }
     }
 
-    public static int getPrix(String mailRestaurant, int idPlat){
+    public static float getPrix(String mailRestaurant, int idPlat){
         try{
             getPrixStmt.setString(1, mailRestaurant);
             getPrixStmt.setInt(2, idPlat);
             ResultSet res = getPrixStmt.executeQuery();
-            if(res.next()) return res.getInt(1);
+            if(res.next()) return res.getFloat(1);
             else return -1;
         }
         catch (SQLException e){
@@ -208,9 +244,9 @@ public class Client {
         try{
             ResultSet res = getAllRestauStmt.executeQuery();
             while(res.next()){
-                System.out.println("restau testé : " + res.getString(1));
                 if(res.getString(1).equals(nom))return true;
             }
+            System.out.println("Ce restaurant n'existe pas !");
             return false;
         }
         catch(Exception e){
@@ -406,4 +442,16 @@ public class Client {
 
     }
 
+    //TODO
+    public static boolean checkHeure(String mailRestaurant, String heure){
+        return true;
+    }
+
+    public static int ajouteSurPlace(String date, String heure, String mailRestaurant, 
+                                        int nbPersonnes, String heureArrivee){
+        return 0;
+
+    }
 }
+
+
