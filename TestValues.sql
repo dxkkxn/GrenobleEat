@@ -85,12 +85,12 @@ Insert into CommandeLivraison values ('2022-11-13','10:23:05',3,'restaurant1@gma
 Insert into CommandeLivraison values ('2022-11-13','08:12:33',2,'restaurant2@gmail.com', '163 Avenue Albert Ier de Belgique');
 
 -- aPourHeureLiv
-Insert into aPourheureLiv values ('2022-11-13','10:23:05',3,'restaurant1@gmail.com','10:53:05');
-Insert into aPourheureLiv values  ('2022-11-13','08:12:33',2,'restaurant2@gmail.com','08:34:05');
+Insert into aPourHeureLiv values ('2022-11-13','10:23:05',3,'restaurant1@gmail.com','10:53:05');
+Insert into aPourHeureLiv values  ('2022-11-13','08:12:33',2,'restaurant2@gmail.com','08:34:05');
 
 
 -- TexteAideLivreur
-Insert into TexteAideLivreur values('Cette commande doit être livrée rapidement !!!')
+Insert into TexteAideLivreur values('Cette commande doit être livrée rapidement !!!');
 
 -- aPourTexteAide
 Insert into aPourTexteAide values ('2022-11-13','10:23:05' , 3 , 'restaurant1@gmail.com','Cette commande doit être livrée rapidement !!!'  );
@@ -109,15 +109,15 @@ Insert into aPourEvaluation values('restaurant1@gmail.com',5,'2022-11-13', '12:1
 
 
 -- Horaires
-Insert into Horaires values('restaurant1@gmail.com','Lundi',1,'08:00','12:00');
-Insert into Horaires values('restaurant1@gmail.com','Lundi',2,'14:00','18:00');
-Insert into Horaires values('restaurant1@gmail.com','Mardi',1,'08:00','12:00');
-Insert into Horaires values('restaurant1@gmail.com','Mardi',2,'14:00','18:00');
-Insert into Horaires values('restaurant1@gmail.com','Mercredi',1,'14:00','18:00');
-Insert into Horaires values('restaurant1@gmail.com','Mercredi',2,'08:00','12:00');
-Insert into Horaires values('restaurant1@gmail.com','Jeudi',1,'08:00','12:00');
-Insert into Horaires values('restaurant1@gmail.com','Jeudi',2,'14:00','18:00');
-Insert into Horaires values('restaurant1@gmail.com','Vendredi',1,'08:00','12:00');
-Insert into Horaires values('restaurant1@gmail.com','Vendredi',2,'14:00','18:00');
-Insert into Horaires values('restaurant1@gmail.com','Samedi',1,'08:00','12:00');
-Insert into Horaires values('restaurant1@gmail.com','Dimanche',1,'08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Lundi','08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Lundi','14:00','18:00');
+Insert into Horaires values('restaurant1@gmail.com','Mardi','08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Mardi','14:00','18:00');
+Insert into Horaires values('restaurant1@gmail.com','Mercredi','14:00','18:00');
+Insert into Horaires values('restaurant1@gmail.com','Mercredi','08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Jeudi','08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Jeudi','14:00','18:00');
+Insert into Horaires values('restaurant1@gmail.com','Vendredi','08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Vendredi','14:00','18:00');
+Insert into Horaires values('restaurant1@gmail.com','Samedi','08:00','12:00');
+Insert into Horaires values('restaurant1@gmail.com','Dimanche','08:00','12:00');

@@ -297,7 +297,8 @@ public class Client {
     }
     private void printSchedule(String restaurant) {
         System.out.println("Schedule\n");
-        String[] days = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"};
+        String[] days = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi",
+                         "Samedi", "Dimanche"};
         try {
             ResultSet res = null;
             for (String day : days) {
