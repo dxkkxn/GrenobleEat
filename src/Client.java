@@ -26,6 +26,7 @@ public class Client {
     private static PreparedStatement updateIdStmt;
     private static PreparedStatement ajouteLivraisonStmt;
     private static PreparedStatement ajouteSurPlaceStmt;
+    private static PreparedStatement getHeureOuv;
 
 
     private static int idUser;
@@ -36,6 +37,10 @@ public class Client {
 
     public void prepareAllStatements() {
         try {
+            ajouteSurPlaceStmt = conn.prepareStatement("INSERT INTO CommandeSurPlace VALUES (?, ?, ?, ?, ?, ?)");
+            getHeureOuv = conn.prepareStatement("SELECT heureOuverture, heureFermeture "+
+                                                        "FROM Horaires WHERE jour LIKE ? " +
+                                                        "AND mailRestaurant LIKE ? ");
             updatePrixStmt = conn.prepareStatement("UPDATE Commande SET prixCommande = ? " + 
                                                     "WHERE dateCommande LIKE ? and heureCommande LIKE ?");
             getMailRestaurantStmt = conn.prepareStatement("SELECT mailRestaurant FROM Restaurant WHERE nomRestaurant LIKE ?");
@@ -443,14 +448,74 @@ public class Client {
     }
 
     //TODO
-    public static boolean checkHeure(String mailRestaurant, String heure){
-        return true;
+    public static boolean checkHeureEtCapacite(String mailRestaurant, String heure, int day){
+        String jour = null;
+        switch(day){
+            case 2:
+                jour = "Lundi";
+                break;
+            case 3:
+                jour = "Mardi";
+                break;
+            case 4:
+                jour = "Mercredi";
+                break;
+            case 5:
+                jour = "Jeudi";
+                break;
+            case 6:
+                jour = "Vendredi";
+            default:
+                return false;
+        }
+
+        ResultSet res;
+        try{
+            getHeureOuv.setString(1, jour);
+            getHeureOuv.setString(2, mailRestaurant);
+            res = getHeureOuv.executeQuery();
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return false;
+        }
+        try{
+            res.next();
+            String heureOuverture = res.getString(1);
+            String heureFermeture = res.getString(2);
+            if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
+                return true;
+            }
+            res.next();
+            heureOuverture = res.getString(1);
+            heureFermeture = res.getString(2);
+            if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
+                return true;
+            }
+            return false;
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static int ajouteSurPlace(String date, String heure, String mailRestaurant, 
                                         int nbPersonnes, String heureArrivee){
-        return 0;
-
+        try{
+            ajouteSurPlaceStmt.setString(1, date);
+            ajouteSurPlaceStmt.setString(2, heure);
+            ajouteSurPlaceStmt.setInt(3,idUser);
+            ajouteSurPlaceStmt.setString(4, mailRestaurant);
+            ajouteSurPlaceStmt.setInt(5, nbPersonnes);
+            ajouteSurPlaceStmt.setString(6, heureArrivee);
+            ajouteSurPlaceStmt.executeQuery();
+            return 0;
+        }
+        catch (SQLException e){
+            e.printStackTrace();
+            return -1;
+        }
     }
 }
 
