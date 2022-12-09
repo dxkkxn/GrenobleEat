@@ -250,18 +250,17 @@ public class App
 
                     Calendar calendar = Calendar.getInstance();
                     int day = calendar.get(Calendar.DAY_OF_WEEK);
-
-                    if(Client.checkHeureEtCapacite(mailRestaurant, heureArrivee, day)){
+                    prompt = "GrenobleEat>";
+                    if(Client.checkHeureEtCapacite(mailRestaurant, heureArrivee, day, nbPersonnes)){
                         int retVal =  Client.ajouteSurPlace(date, heure,
                                                      mailRestaurant, nbPersonnes, heureArrivee);
-                        prompt = "GrenobleEat>";
                         if(retVal == 0){
                             commit();
                             System.out.println("Commande passée !");
                         }
                         else{
                             rollback();
-                            return;  
+                            return;
                         } 
                     }
                     else{
