@@ -3,7 +3,7 @@ SELECT nombrePlaces FROM Restaurant
 WHERE mailRestaurant LIKE ?
 
 SELECT SUM(nombrePersonnes) FROM CommandeSurPlace
-WHERE heureArrive BETWEEN ? AND ?
+WHERE WHERE dateCommande LIKE ? AND heureArrive BETWEEN ? AND ?
 
 
 SELECT heureOuverture, heureFermeture
@@ -90,14 +90,27 @@ SELECT cat FROM ancestor
 UNION
 SELECT nomCategorie AS cat FROM aPourCategorie WHERE mailRestaurant LIKE ?
 
+-- Requetes pour passer les commandes
 
+-- Première étape : création d'une commande de prix 0, au restaurant renseigné et à la date courante
+INSERT INTO Commande Values(?, ?, ?, ?, ?, ?)
+-- A chaque fois que l'utilisateur choisit un plat, il est inséré avec sa quantité dans la table qui lie les plats aux commandes.
+-- Le lien est fait grâce à la date récupérée précédemment
+INSERT INTO aPourPlats VALUES( ?, ?, ?, ?, ?, ?)
+-- Une fois que tous les plats ont été choisis, le prix qui a été calculé au fur et à mesure est mis à jour
 UPDATE Commande SET prixCommande = ?
 WHERE dateCommande LIKE ? AND heureCommande LIKE ?
+AND idUtilisateur LIKE ? AND mailRestaurant LIKE ?
+-- Finalement, on récupère les informations concernant la livraison / réservation le cas échéant.
 INSERT INTO CommandeSurPlace VALUES (?, ?, ?, ?, ?, ?)
-INSERT INTO Commande Values(?, ?, ?, ?, ?, ?)
 INSERT INTO CommandeLivraison Values(?, ?, ?, ?, ?)
-INSERT INTO CommandeSurPlace Values(?, ?, ?, ?, ?, ?)
-INSERT INTO aPourPlats VALUES( ?, ?, ?, ?, ?, ?)
+
+-- La cohérence de la base de données est assurée par un Savepoint avant la première insertion
+-- Le commit ne se fait qu'à la fin
+SAVEPOINT avantCommande
+ROLLBACK TO avantCommande
+COMMIT
+
 
 
 
