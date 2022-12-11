@@ -2,7 +2,6 @@ import java.sql.*;
 import java.util.List;
 import java.time.*;
 import java.time.format.*;
-import java.util.Calendar;
 
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
@@ -24,7 +23,7 @@ public class App
     private boolean browsingCategories = false;
     private Connection connection;
     private Client c;
-    private StringsCompleter connectedCompleter = new StringsCompleter("browseCategories", "connect",
+    private StringsCompleter connectedCompleter = new StringsCompleter("browseCategories",
                                                       "passerCommande", "disconnect",
                                                       "quit", "deleteAccount");
     private StringsCompleter notConnectedCompleter = new StringsCompleter("connect", "quit");
@@ -61,8 +60,8 @@ public class App
                 } else {
                     switchNotConnected(pl.words().get(0));
                 }
-                }
             }
+        }
     }
 
     void connectDatabase() {
@@ -211,7 +210,6 @@ public class App
             }
             else if(pl.words().size() == 1){
                 if(pl.words().get(0).equals("valider")){
-                    System.out.println("Merci !");
                     termine = true;
                 }
                 else if(pl.words().get(0).equals("annuler")){
@@ -222,7 +220,7 @@ public class App
             }
         }
         if(prix > 0){
-            Client.setPrixCommande(date, heure, prix);
+            Client.setPrixCommande(date, heure, prix ,mailRestaurant);
             switch(typeCommande){
                 case SUR_PLACE:
                     pl = null;
@@ -247,11 +245,8 @@ public class App
                     }
                     String heureArrivee = pl.words().get(0);
                     heureArrivee += ":00";
-
-                    Calendar calendar = Calendar.getInstance();
-                    int day = calendar.get(Calendar.DAY_OF_WEEK);
                     prompt = "GrenobleEat>";
-                    if(Client.checkHeureEtCapacite(mailRestaurant, heureArrivee, day, nbPersonnes)){
+                    if(Client.checkHeureEtCapacite(mailRestaurant, date, heureArrivee, nbPersonnes)){
                         int retVal =  Client.ajouteSurPlace(date, heure,
                                                      mailRestaurant, nbPersonnes, heureArrivee);
                         if(retVal == 0){
@@ -264,7 +259,6 @@ public class App
                         } 
                     }
                     else{
-                        System.out.println("Désolé, il n'y a plus de place !");
                         rollback();
                     }
                     break;

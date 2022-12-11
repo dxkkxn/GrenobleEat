@@ -2,6 +2,7 @@
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Calendar;
 
 public class Client {
     private static Connection conn;
@@ -40,13 +41,14 @@ public class Client {
     public void prepareAllStatements() {
         try {
             getNbPlacesStmt = conn.prepareStatement("SELECT nombrePlaces from Restaurant WHERE mailRestaurant LIKE ?");
-            getNbReservationsStmt = conn.prepareStatement("SELECT SUM(nombrePersonnes) FROM CommandeSurPlace WHERE heureArrive BETWEEN ? AND ?");
+            getNbReservationsStmt = conn.prepareStatement("SELECT SUM(nombrePersonnes) FROM CommandeSurPlace WHERE dateCommande LIKE ? AND heureArrive BETWEEN ? AND ?");
             ajouteSurPlaceStmt = conn.prepareStatement("INSERT INTO CommandeSurPlace VALUES (?, ?, ?, ?, ?, ?)");
             getHeureOuv = conn.prepareStatement("SELECT heureOuverture, heureFermeture "+
                                                         "FROM Horaires WHERE jour LIKE ? " +
                                                         "AND mailRestaurant LIKE ? ");
             updatePrixStmt = conn.prepareStatement("UPDATE Commande SET prixCommande = ? " + 
-                                                    "WHERE dateCommande LIKE ? and heureCommande LIKE ?");
+                                                    "WHERE dateCommande LIKE ? and heureCommande LIKE ?" +
+                                                    "AND idUtilisateur LIKE ? AND mailRestaurant LIKE ?");
             getMailRestaurantStmt = conn.prepareStatement("SELECT mailRestaurant FROM Restaurant WHERE nomRestaurant LIKE ?");
             ajouteCommandeStmt = conn.prepareStatement("INSERT INTO Commande Values(?, ?, ?, ?, ?, ?)");
             ajouteLivraisonStmt = conn.prepareStatement("INSERT INTO CommandeLivraison Values(?, ?, ?, ?, ?)");
@@ -179,11 +181,13 @@ public class Client {
         }
     }
 
-    public static void setPrixCommande(String date, String heure, float prix){
+    public static void setPrixCommande(String date, String heure, float prix, String mailRestaurant){
         try {
             updatePrixStmt.setFloat(1, prix);
             updatePrixStmt.setString(2, date);
             updatePrixStmt.setString(3, heure);
+            updatePrixStmt.setInt(5, idUser);
+            updatePrixStmt.setString(6, mailRestaurant);
             updatePrixStmt.executeQuery();
         }
         catch (SQLException e) {
@@ -451,8 +455,10 @@ public class Client {
     }
 
     //TODO
-    public static boolean checkHeureEtCapacite(String mailRestaurant, String heure, int day, int nbPersonnes){
+    public static boolean checkHeureEtCapacite(String mailRestaurant, String date, String heure, int nbPersonnes){
         String jour = null;
+        Calendar calendar = Calendar.getInstance();
+        int day = calendar.get(Calendar.DAY_OF_WEEK);
         switch(day){
             case 1:
                 jour = "Dimanche";
@@ -493,13 +499,13 @@ public class Client {
             String heureOuverture = res.getString(1);
             String heureFermeture = res.getString(2);
             if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
-                return checkPlacesDispo(mailRestaurant, nbPersonnes, heureOuverture, heureFermeture);
+                return checkPlacesDispo(mailRestaurant, nbPersonnes, heureOuverture, heureFermeture, date);
             }
             res.next();
             heureOuverture = res.getString(1);
             heureFermeture = res.getString(2);
             if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
-                return checkPlacesDispo(mailRestaurant, nbPersonnes, heureOuverture, heureFermeture);
+                return checkPlacesDispo(mailRestaurant, nbPersonnes, heureOuverture, heureFermeture, date);
             }
             System.out.println("Le restaurant n'est pas ouvert à cette heure.");
             return false;
@@ -510,14 +516,15 @@ public class Client {
         }
     }
 
-    private static boolean checkPlacesDispo(String mailRestaurant, int nbPersonnes, String heureOuverture, String heureFermeture){
+    private static boolean checkPlacesDispo(String mailRestaurant, int nbPersonnes, String heureOuverture, String heureFermeture, String date){
         try{
             getNbPlacesStmt.setString(1, mailRestaurant);
             ResultSet res = getNbPlacesStmt.executeQuery();
             res.next();
             int nbPlaces = res.getInt(1);
-            getNbReservationsStmt.setString(1, heureOuverture);
-            getNbReservationsStmt.setString(2, heureFermeture);
+            getNbReservationsStmt.setString(1, date);
+            getNbReservationsStmt.setString(2, heureOuverture);
+            getNbReservationsStmt.setString(3, heureFermeture);
             res = getNbReservationsStmt.executeQuery();
             res.next();
             int nbReservations = res.getInt(1);
@@ -551,5 +558,3 @@ public class Client {
         }
     }
 }
-
-
