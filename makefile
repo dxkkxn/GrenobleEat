@@ -4,17 +4,17 @@
 # @file
 # @version 0.1
 
+userDB = dxkkxn
+pwdDB = dxkkxn
 jline = jline-3.21.0.jar
-
 jbdc = mariadb-java-client.jar
-
 all: Main Demo
 Main:
 	javac -d bin -classpath bin/$(jbdc):bin/$(jline) -sourcepath src src/Main.java
 Demo:
 	javac -d bin -sourcepath src src/DBDemo.java
 exec:
-	java -classpath bin:bin/$(jbdc):bin/$(jline) Main
+	java -classpath bin:bin/$(jbdc):bin/$(jline) Main $(userDB) $(pwdDB)
 demo:
 	java -classpath bin:$(jbdc) DBDemo
 
