@@ -27,6 +27,8 @@ public class Client {
     private static PreparedStatement ajouteLivraisonStmt;
     private static PreparedStatement ajouteSurPlaceStmt;
     private static PreparedStatement getHeureOuv;
+    private static PreparedStatement getNbReservationsStmt;
+    private static PreparedStatement getNbPlacesStmt;
 
 
     private static int idUser;
@@ -37,6 +39,8 @@ public class Client {
 
     public void prepareAllStatements() {
         try {
+            getNbPlacesStmt = conn.prepareStatement("SELECT nombrePlaces from Restaurant WHERE mailRestaurant LIKE ?");
+            getNbReservationsStmt = conn.prepareStatement("SELECT SUM(nombrePersonnes) FROM CommandeSurPlace WHERE heureArrive BETWEEN ? AND ?");
             ajouteSurPlaceStmt = conn.prepareStatement("INSERT INTO CommandeSurPlace VALUES (?, ?, ?, ?, ?, ?)");
             getHeureOuv = conn.prepareStatement("SELECT heureOuverture, heureFermeture "+
                                                         "FROM Horaires WHERE jour LIKE ? " +
@@ -450,9 +454,11 @@ public class Client {
     }
 
     //TODO
-    public static boolean checkHeureEtCapacite(String mailRestaurant, String heure, int day){
+    public static boolean checkHeureEtCapacite(String mailRestaurant, String heure, int day, int nbPersonnes){
         String jour = null;
         switch(day){
+            case 1:
+                jour = "Dimanche";
             case 2:
                 jour = "Lundi";
                 break;
@@ -467,6 +473,10 @@ public class Client {
                 break;
             case 6:
                 jour = "Vendredi";
+                break;
+            case 7:
+                jour = "Samedi";
+                break;
             default:
                 return false;
         }
@@ -486,17 +496,41 @@ public class Client {
             String heureOuverture = res.getString(1);
             String heureFermeture = res.getString(2);
             if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
-                return true;
+                return checkPlacesDispo(mailRestaurant, nbPersonnes, heureOuverture, heureFermeture);
             }
             res.next();
             heureOuverture = res.getString(1);
             heureFermeture = res.getString(2);
             if(heure.compareTo(heureOuverture) >= 0 && heure.compareTo(heureFermeture) <= 0){
-                return true;
+                return checkPlacesDispo(mailRestaurant, nbPersonnes, heureOuverture, heureFermeture);
             }
+            System.out.println("Le restaurant n'est pas ouvert à cette heure.");
             return false;
         }
         catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static boolean checkPlacesDispo(String mailRestaurant, int nbPersonnes, String heureOuverture, String heureFermeture){
+        try{
+            getNbPlacesStmt.setString(1, mailRestaurant);
+            ResultSet res = getNbPlacesStmt.executeQuery();
+            res.next();
+            int nbPlaces = res.getInt(1);
+            getNbReservationsStmt.setString(1, heureOuverture);
+            getNbReservationsStmt.setString(2, heureFermeture);
+            res = getNbReservationsStmt.executeQuery();
+            res.next();
+            int nbReservations = res.getInt(1);
+            if (nbPersonnes <= nbPlaces - nbReservations){
+                return true;
+            }
+            System.out.println("Plus de places disponibles.");
+            return false;
+        }
+        catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
