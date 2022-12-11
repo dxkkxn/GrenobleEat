@@ -28,6 +28,14 @@ public class App
                                                       "quit", "deleteAccount");
     private StringsCompleter notConnectedCompleter = new StringsCompleter("connect", "quit");
 
+    private String usernameDB;
+    private String passwordDB;
+
+    public App(String usernameDB, String passwordDB) {
+        this.usernameDB = usernameDB;
+        this.passwordDB = passwordDB;
+    }
+
     enum enumCommande{
         LIVRAISON,
         A_EMPORTER,
@@ -71,8 +79,7 @@ public class App
             System.out.println("Driver loaded");
             // Try to connect
             connection = DriverManager.getConnection
-            //("jdbc:mariadb://localhost/grenoble_eat", "dxkkxn", "dxkkxn");
-            ("jdbc:mariadb://localhost/GrenobleEat", "etienne", "pwd");
+            ("jdbc:mariadb://localhost/GrenobleEat", usernameDB, passwordDB);
 
             System.out.println("Connected succesfully to database");
             Client.setConnection(connection);

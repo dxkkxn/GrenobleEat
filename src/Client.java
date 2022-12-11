@@ -91,7 +91,7 @@ public class Client {
                     +" and r.mailRestaurant = apc.mailRestaurant and "
                     +"      (apc.nomCategorie = s.cat or"
                     +"      apc.nomCategorie LIKE ?)"
-                    +" and h.jour LIKE ? and h.heureOuverture > ?"
+                    +" and h.jour LIKE ? and h.heureOuverture <= ? and h.heureFermeture > ?"
                     +" group by mailRestaurant order by noteMoy desc, r.nomRestaurant asc");
             categoriesOfResStmt = conn.prepareStatement(
             " with recursive ancestor as ("
@@ -309,6 +309,7 @@ public class Client {
             updateIdStmt.setInt(1, newId);
             updateIdStmt.setInt(2, idUser);
             updateIdStmt.executeUpdate();
+            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace ();
         }
@@ -346,7 +347,8 @@ public class Client {
     }
     private void printSchedule(String restaurant) {
         System.out.println("Schedule\n");
-        String[] days = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"};
+        String[] days = {"Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi",
+                         "Samedi", "Dimanche"};
         try {
             ResultSet res = null;
             for (String day : days) {
@@ -413,6 +415,7 @@ public class Client {
             resInCatFilterStmt.setString(2, category);
             resInCatFilterStmt.setString(3, day);
             resInCatFilterStmt.setString(4, hour);
+            resInCatFilterStmt.setString(5, hour);
             ResultSet res = resInCatFilterStmt.executeQuery();
             while (res.next()) {
                 System.out.println("Email: " + res.getString("mailRestaurant"));
