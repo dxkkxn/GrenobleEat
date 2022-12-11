@@ -66,3 +66,26 @@ Commandes disponibles :
 	 - passerCommande
 GrenobleEat (Not connected)>
 ```
+
+### Passer commande
+```
+GrenobleEat> passerCommande
+Choisissez un Restaurant> restaurant1
+ - Sur place :
+sur place / a emporter / en livraison> sur place
+Choisissez un / des plats suivi d'une quantité, puis entrez 'valider' ou 'annuler'
+> plat2 3
+Choisissez un / des plats suivi d'une quantité, puis entrez 'valider' ou 'annuler'
+> valider
+Nombre de personnes>3
+heure d'arrivee> (hh:mm)> 11:30
+Commande passée !
+- en livraison :
+sur place / a emporter / en livraison> en livraison
+Choisissez un / des plats suivi d'une quantité, puis entrez 'valider' ou 'annuler'
+> plat2 3
+Choisissez un / des plats suivi d'une quantité, puis entrez 'valider' ou 'annuler'
+> valider
+Adresse de livraison> 3 rue quelconque, VilleLambda
+Commande passée !
+```
